@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { Slider } from "@/components/ui/slider"
 
 export type FiltersState = {
   q: string
   categories: string[]
   min: string // on garde en string pour inputs
   max: string
+  minRating: number
   sort: "relevance" | "rating" | "reviews" | "priceLow" | "priceHigh" | "az"
 }
 
@@ -41,7 +43,7 @@ export function FiltersPanel({
         <Input
           value={value.q}
           onChange={(e) => onChange({ ...value, q: e.target.value })}
-          placeholder="Search by name, keyword…"
+          placeholder="Search by tool name"
         />
       </div>
 
@@ -63,6 +65,26 @@ export function FiltersPanel({
             onChange={(e) => onChange({ ...value, max: e.target.value })}
           />
         </div>
+      </div>
+
+      <Separator />
+
+      <div>
+        <div className="mb-2 flex items-center justify-between text-sm font-medium">
+          <span>Minimum rating</span>
+          <span className="text-xs font-normal text-muted-foreground">
+            {value.minRating > 0 ? `${value.minRating.toFixed(1)}+` : "Any"}
+          </span>
+        </div>
+        <Slider
+          min={0}
+          max={5}
+          step={0.5}
+          value={[value.minRating]}
+          onValueChange={(vals) =>
+            onChange({ ...value, minRating: vals[0] ?? 0 })
+          }
+        />
       </div>
 
       <Separator />
