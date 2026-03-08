@@ -2,7 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { Check } from "lucide-react"
 import type { Tool } from "@/data/mockTools"
+import { ToolLogo } from "@/components/catalog/ToolLogo"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,16 +16,15 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 
-// Generate initials for the logo placeholder from tool name
-function getInitials(name: string) {
-  const words = name.split(" ").filter(Boolean)
-  return (
-    words[0]?.[0]?.toUpperCase() +
-    (words.length > 1 ? words[1]?.[0]?.toUpperCase() : "")
-  )
-}
-
-export function ToolCard({ tool }: { tool: Tool }) {
+export function ToolCard({
+  tool,
+  compareSelected = false,
+  onToggleCompare,
+}: {
+  tool: Tool
+  compareSelected?: boolean
+  onToggleCompare?: (slug: string) => void
+}) {
   const [open, setOpen] = useState(false)
   // For hover state on desktop for showing Quick view
   const [hovered, setHovered] = useState(false)
@@ -46,7 +47,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
             // Transitions for border, shadow, transform, and ring
             "transition-all duration-200",
             "border border-border bg-background",
-            "hover:-translate-y-[5px] hover:shadow-xl hover:border-primary/70",
+            "hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/50",
             "hover:ring-1 hover:ring-muted-foreground/10",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
             "will-change-transform will-change-shadow will-change-border",
@@ -54,90 +55,95 @@ export function ToolCard({ tool }: { tool: Tool }) {
         }
         style={{
           boxShadow: hovered
-            ? "0 4px 24px 0 rgba(19,22,26,0.08), 0 1px 1.5px 0 rgba(19,22,26,0.04)"
+            ? "0 2px 12px rgba(0,0,0,0.06)"
             : undefined,
-          borderLeftWidth: hovered ? 4 : 1,
+          borderLeftWidth: hovered ? 3 : 1,
           borderLeftColor: hovered ? "var(--primary)" : undefined,
         }}
       >
-        <CardContent className="flex flex-col gap-5 p-7 pb-6">
-          <div className="flex w-full items-center">
-            {/* Logo Placeholder */}
-            <div className="mr-5 flex-shrink-0">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted text-2xl font-bold uppercase text-primary">
-                {getInitials(tool.name)}
+        <CardContent className="flex flex-col gap-3 p-5 md:p-6">
+          {/* Main row: logo, title, rating, pricing - horizontal layout */}
+          <div className="flex w-full items-center gap-4">
+            <ToolLogo tool={tool} className="h-10 w-10" />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-semibold leading-snug tracking-tight text-foreground sm:text-lg">
+                {tool.name}
+              </h3>
+              <div className="mt-1 flex items-center gap-2 text-xs font-medium text-emerald-700">
+                <span>★ {tool.rating.toFixed(1)}</span>
+                <span className="text-muted-foreground font-normal">({tool.reviews})</span>
               </div>
             </div>
-            <div className="flex-1 min-w-0">
-              {/* Title and tagline */}
-              <div className="flex items-start gap-3">
-                <h3 className="truncate text-xl font-semibold tracking-tight text-foreground">
-                  {tool.name}
-                </h3>
-                {/* Rating chip (desktop) */}
-                <div className="hidden sm:inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                  <span className="text-[11px]">★</span>
-                  <span>{tool.rating.toFixed(1)}</span>
-                  <span className="text-[11px] text-emerald-800/70">
-                    ({tool.reviews})
-                  </span>
-                </div>
-              </div>
-              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground/90">
-                {tool.tagline}
-              </p>
-            </div>
-            {/* Pricing premium format */}
             {tool.pricingMin != null && (
-              <div className="ml-6 flex-shrink-0 flex flex-col items-end whitespace-nowrap">
-                <span className="uppercase text-xs text-muted-foreground mb-0.5">
-                  from
+              <div className="shrink-0 text-right">
+                <span className="text-base font-semibold tabular-nums text-foreground">
+                  ${tool.pricingMin}
                 </span>
-                <span>
-                  <span className="text-xl font-bold text-foreground leading-snug">
-                    ${tool.pricingMin}
-                  </span>
-                  <span className="text-muted-foreground text-sm font-medium">/mo</span>
-                </span>
+                <span className="text-xs text-muted-foreground">/mo</span>
               </div>
             )}
           </div>
 
-          {/* Rating (mobile) */}
-          <div className="mt-1 flex items-center gap-2 text-sm sm:hidden">
-            <span className="font-medium text-primary">
-              ★ {tool.rating.toFixed(1)}
-            </span>
-            <span className="text-muted-foreground">
-              ({tool.reviews} reviews)
-            </span>
-          </div>
+          {/* Tagline - single line, subtle */}
+          <p className="line-clamp-1 text-[13px] leading-snug text-muted-foreground">
+            {tool.tagline}
+          </p>
 
-          {/* Categories as pill-shaped badges */}
-          <div className="flex flex-wrap gap-2">
-            {shownTags.map((cat) => (
-              <Badge
-                key={cat}
-                variant="secondary"
-                className="rounded-full px-3 py-1 text-xs font-medium"
+          {/* Footer: pills + compare - single compact row */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div className="flex flex-wrap gap-1.5">
+              {shownTags.map((cat) => (
+                <Badge
+                  key={cat}
+                  variant="secondary"
+                  className="rounded-md px-2 py-0.5 text-[11px] font-medium"
+                >
+                  {cat}
+                </Badge>
+              ))}
+              {extraCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="rounded-md px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                >
+                  +{extraCount}
+                </Badge>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleCompare?.(tool.slug)
+              }}
+              className={[
+                "inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors",
+                compareSelected
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+              ].join(" ")}
+              aria-pressed={compareSelected}
+            >
+              <span
+                className={[
+                  "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors",
+                  compareSelected
+                    ? "border-primary bg-primary"
+                    : "border-muted-foreground/40 bg-background",
+                ].join(" ")}
               >
-                {cat}
-              </Badge>
-            ))}
-            {extraCount > 0 && (
-              <Badge
-                variant="secondary"
-                className="rounded-full px-3 py-1 text-xs font-medium text-muted-foreground"
-              >
-                +{extraCount}
-              </Badge>
-            )}
+                {compareSelected && (
+                  <Check className="h-2 w-2 text-primary-foreground" strokeWidth={2.5} />
+                )}
+              </span>
+              <span>Compare</span>
+            </button>
           </div>
 
           {/* Quick View Button (hover only, desktop only) */}
           <div
             className={[
-              "absolute right-7 top-5 z-10",
+              "absolute right-5 top-4 z-10",
               "hidden sm:block",
               hovered
                 ? "opacity-100 pointer-events-auto translate-y-0"
@@ -148,7 +154,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
             <Button
               variant="secondary"
               size="sm"
-              className="rounded-full px-4 py-1 shadow"
+              className="rounded-full px-3 py-0.5 text-xs shadow"
               tabIndex={-1}
               onClick={e => {
                 e.stopPropagation()
@@ -172,9 +178,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
           <div className="flex w-full items-center justify-between border-b pb-4">
             <div className="flex items-center gap-4">
               {/* Logo placeholder */}
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted text-2xl font-bold uppercase text-primary">
-                {getInitials(tool.name)}
-              </div>
+              <ToolLogo tool={tool} className="h-12 w-12 rounded-xl" />
               <div>
                 <div className="text-2xl font-bold tracking-tight">{tool.name}</div>
                 <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
